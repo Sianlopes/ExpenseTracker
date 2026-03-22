@@ -7,16 +7,15 @@ const authRoutes = require('./routes/auth.cjs')
 const transactionRoutes = require('./routes/transactions.cjs')
 
 const app = express()
-const PORT = 3001
+const PORT = process.env.PORT || 3001
 
 // Middleware
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests from any localhost port (Vite may use 5173, 5174, etc.)
     if (!origin || /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
       callback(null, true)
     } else {
-      callback(new Error('Not allowed by CORS'))
+      callback(null, true) // Allow all origins in production (same server)
     }
   },
   credentials: true,
@@ -25,12 +24,12 @@ app.use(cors({
 app.use(express.json())
 
 app.use(session({
-  secret: 'expense-tracker-secret-key-2026',
+  secret: process.env.SESSION_SECRET || 'expense-tracker-secret-key-2026',
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: false, // set true in production with HTTPS
+    secure: false,
     maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
   },
 }))
@@ -39,7 +38,16 @@ app.use(session({
 app.use('/api/auth', authRoutes)
 app.use('/api/transactions', transactionRoutes)
 
+// Serve React frontend (production build)
+const distPath = path.join(__dirname, '..', 'dist')
+app.use(express.static(distPath))
+
+// Fallback: any non-API route serves index.html (for React client-side routing)
+app.get('{*path}', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'))
+})
+
 // Start server
 app.listen(PORT, () => {
-  console.log(`✅ Expense Tracker API running at http://localhost:${PORT}`)
+  console.log(`✅ Expense Tracker running at http://localhost:${PORT}`)
 })
