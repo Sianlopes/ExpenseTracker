@@ -86,6 +86,10 @@ const api = async (url, options = {}) => {
     credentials: 'include',
     ...options,
   })
+  const contentType = res.headers.get('content-type') || ''
+  if (!contentType.includes('application/json')) {
+    throw new Error('Server unavailable. Make sure the backend is running (npm run server).')
+  }
   const data = await res.json()
   if (!res.ok) {
     throw new Error(data.error || 'Something went wrong.')
