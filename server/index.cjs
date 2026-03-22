@@ -11,7 +11,14 @@ const PORT = 3001
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: function (origin, callback) {
+    // Allow requests from any localhost port (Vite may use 5173, 5174, etc.)
+    if (!origin || /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true,
 }))
 
