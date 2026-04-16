@@ -1,7 +1,11 @@
 {
   "rewrites": [
     {
-      "source": "/((?!assets/).*)",
+      "source": "/api/(.*)",
+      "destination": "https://expense-tracker.onrender.com/api/$1"
+    },
+    {
+      "source": "/((?!api/|assets/).*)",
       "destination": "/index.html"
     }
   ]

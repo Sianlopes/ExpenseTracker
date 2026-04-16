@@ -144,9 +144,9 @@ function LoginPage({ onLogin }) {
     setError('')
     setLoading(true)
 
-    try {
-      if (view === 'signup') {
-        const trimmedEmail = email.trim().toLowerCase()
+      try {
+        if (view === 'signup') {
+          const trimmedEmail = email.trim().toLowerCase()
         if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
           setError('Please enter a valid email address.')
           setLoading(false)
@@ -157,21 +157,21 @@ function LoginPage({ onLogin }) {
           setLoading(false)
           return
         }
-        const data = await api('/api/auth/register', {
-          method: 'POST',
-          body: JSON.stringify({ username: username.trim(), email: trimmedEmail, password }),
-        })
-        onLogin(data.username)
-      } else {
-        const data = await api('/api/auth/login', {
-          method: 'POST',
-          body: JSON.stringify({ username: username.trim(), password }),
-        })
-        onLogin(data.username)
-      }
-    } catch (err) {
-      setError(err.message)
-    } finally {
+          await api('/api/auth/register', {
+            method: 'POST',
+            body: JSON.stringify({ username: username.trim(), email: trimmedEmail, password }),
+          })
+        } else {
+          await api('/api/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ username: username.trim(), password }),
+          })
+        }
+        const session = await api('/api/auth/me')
+        onLogin(session.username)
+      } catch (err) {
+        setError(err.message)
+      } finally {
       setLoading(false)
     }
   }

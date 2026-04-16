@@ -2,6 +2,7 @@ const express = require('express')
 const session = require('express-session')
 const cors = require('cors')
 const path = require('path')
+const fs = require('fs')
 
 const authRoutes = require('./routes/auth.cjs')
 const transactionRoutes = require('./routes/transactions.cjs')
@@ -56,11 +57,15 @@ app.use('/api/auth', authRoutes)
 app.use('/api/transactions', transactionRoutes)
 
 const distPath = path.join(__dirname, '..', 'dist')
-app.use(express.static(distPath))
+const indexPath = path.join(distPath, 'index.html')
 
-app.get('{*path}', (req, res) => {
-  res.sendFile(path.join(distPath, 'index.html'))
-})
+if (fs.existsSync(indexPath)) {
+  app.use(express.static(distPath))
+
+  app.get('{*path}', (req, res) => {
+    res.sendFile(indexPath)
+  })
+}
 
 app.listen(PORT, () => {
   console.log(`Expense Tracker running at http://localhost:${PORT}`)
