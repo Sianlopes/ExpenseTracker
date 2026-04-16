@@ -4,13 +4,14 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node ./node_modules/vite/bin/vite.js",
-    "build": "node ./node_modules/vite/bin/vite.js build",
-    "preview": "node ./node_modules/vite/bin/vite.js preview",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "server": "node server/index.cjs",
     "start": "node server/index.cjs"
   },
   "dependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
@@ -18,10 +19,7 @@
     "express-session": "^1.19.0",
     "mongoose": "^9.4.1",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.1",
+    "react-dom": "^18.3.1",
     "vite": "^5.4.10"
   }
 }
