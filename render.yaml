@@ -5,6 +5,10 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
+      - key: CLIENT_URL
+        value: https://expense-tracker-6i63.vercel.app
+      - key: MONGODB_URI
+        sync: false
       - key: NODE_ENV
         value: production
       - key: SESSION_SECRET

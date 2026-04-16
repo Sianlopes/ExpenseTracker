@@ -10,15 +10,25 @@ const connectDB = require('./db.cjs')
 const app = express()
 const PORT = process.env.PORT || 3001
 const isProduction = process.env.NODE_ENV === 'production'
+const clientUrl = process.env.CLIENT_URL
+const allowedOrigins = new Set([
+  'http://localhost:5173',
+  'http://localhost:3000',
+  clientUrl,
+].filter(Boolean))
 
 connectDB()
 
+if (isProduction) {
+  app.set('trust proxy', 1)
+}
+
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
+    if (!origin || allowedOrigins.has(origin)) {
       callback(null, true)
     } else {
-      callback(null, true)
+      callback(new Error('Not allowed by CORS'))
     }
   },
   credentials: true,
@@ -37,6 +47,10 @@ app.use(session({
     maxAge: 1000 * 60 * 60 * 24 * 7,
   },
 }))
+
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true })
+})
 
 app.use('/api/auth', authRoutes)
 app.use('/api/transactions', transactionRoutes)
