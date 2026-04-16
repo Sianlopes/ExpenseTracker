@@ -80,7 +80,7 @@ const createConicGradient = (items, total) => {
 }
 
 /* ─── API helper ─── */
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+const API_BASE_URL = ''
 
 const api = async (url, options = {}) => {
   const res = await fetch(`${API_BASE_URL}${url}`, {
@@ -94,9 +94,7 @@ const api = async (url, options = {}) => {
   const contentType = res.headers.get('content-type') || ''
   if (!contentType.includes('application/json')) {
     throw new Error(
-      API_BASE_URL
-        ? 'Server unavailable. Check that the deployed backend URL is correct and online.'
-        : 'Server unavailable. Make sure the backend is running locally with `npm run server`.',
+      'Server unavailable. Check that the backend deployment is online and the Vercel rewrite is correct.',
     )
   }
   const data = await res.json()

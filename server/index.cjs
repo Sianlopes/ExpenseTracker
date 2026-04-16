@@ -65,6 +65,14 @@ if (fs.existsSync(indexPath)) {
   app.get('{*path}', (req, res) => {
     res.sendFile(indexPath)
   })
+} else {
+  app.get('/', (req, res) => {
+    res.json({
+      ok: true,
+      service: 'expense-tracker-api',
+      health: '/api/health',
+    })
+  })
 }
 
 app.listen(PORT, () => {
