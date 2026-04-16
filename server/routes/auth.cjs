@@ -1,6 +1,6 @@
 const express = require('express')
 const bcrypt = require('bcrypt')
-const db = require('../db.cjs')
+const User = require('../models/User.cjs')
 
 const router = express.Router()
 const SALT_ROUNDS = 10
@@ -23,28 +23,35 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Please enter a valid email address.' })
     }
 
+    const trimmedUsername = username.trim()
+    const trimmedEmail = email.trim().toLowerCase()
+
     // Check if username exists
-    const existingUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username.trim())
-    if (existingUser) {
+    const existingUsername = await User.findOne({ username: trimmedUsername })
+    if (existingUsername) {
       return res.status(409).json({ error: 'Username already exists. Please log in.' })
     }
 
     // Check if email exists
-    const existingEmail = db.prepare('SELECT id FROM users WHERE email = ?').get(email.trim().toLowerCase())
+    const existingEmail = await User.findOne({ email: trimmedEmail })
     if (existingEmail) {
       return res.status(409).json({ error: 'This email is already registered.' })
     }
 
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS)
 
-    const result = db.prepare(
-      'INSERT INTO users (username, email, password) VALUES (?, ?, ?)'
-    ).run(username.trim(), email.trim().toLowerCase(), hashedPassword)
+    const newUser = new User({
+      username: trimmedUsername,
+      email: trimmedEmail,
+      password: hashedPassword
+    })
+    
+    await newUser.save()
 
-    req.session.userId = result.lastInsertRowid
-    req.session.username = username.trim()
+    req.session.userId = newUser._id.toString()
+    req.session.username = trimmedUsername
 
-    res.json({ username: username.trim() })
+    res.json({ username: trimmedUsername })
   } catch (err) {
     console.error('Register error:', err)
     res.status(500).json({ error: 'Server error. Please try again.' })
@@ -60,7 +67,9 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Username and password are required.' })
     }
 
-    const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username.trim())
+    const trimmedUsername = username.trim()
+    const user = await User.findOne({ username: trimmedUsername })
+
     if (!user) {
       return res.status(401).json({ error: 'Invalid username or password.' })
     }
@@ -70,7 +79,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid username or password.' })
     }
 
-    req.session.userId = user.id
+    req.session.userId = user._id.toString()
     req.session.username = user.username
 
     res.json({ username: user.username })
@@ -100,21 +109,28 @@ router.get('/me', (req, res) => {
 })
 
 // POST /api/auth/forgot-password
-router.post('/forgot-password', (req, res) => {
-  const { email } = req.body
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body
 
-  if (!email) {
-    return res.status(400).json({ error: 'Please enter a valid email address.' })
+    if (!email) {
+      return res.status(400).json({ error: 'Please enter a valid email address.' })
+    }
+
+    const trimmedEmail = email.trim().toLowerCase()
+    const user = await User.findOne({ email: trimmedEmail })
+
+    if (!user) {
+      return res.status(404).json({ error: 'No account found with this email address.' })
+    }
+
+    // In a real app, you'd send an email with a reset token
+    // For this demo, we return the username so the frontend can proceed to reset
+    res.json({ username: user.username })
+  } catch (err) {
+    console.error('Forgot password error:', err)
+    res.status(500).json({ error: 'Server error. Please try again.' })
   }
-
-  const user = db.prepare('SELECT id, username FROM users WHERE email = ?').get(email.trim().toLowerCase())
-  if (!user) {
-    return res.status(404).json({ error: 'No account found with this email address.' })
-  }
-
-  // In a real app, you'd send an email with a reset token
-  // For this demo, we return the username so the frontend can proceed to reset
-  res.json({ username: user.username })
 })
 
 // POST /api/auth/reset-password
@@ -130,13 +146,17 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 4 characters.' })
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS)
+    const trimmedUsername = username.trim()
+    const user = await User.findOne({ username: trimmedUsername })
 
-    const result = db.prepare('UPDATE users SET password = ? WHERE username = ?').run(hashedPassword, username.trim())
-
-    if (result.changes === 0) {
+    if (!user) {
       return res.status(404).json({ error: 'User not found.' })
     }
+
+    const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS)
+
+    user.password = hashedPassword
+    await user.save()
 
     res.json({ success: true })
   } catch (err) {

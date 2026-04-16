@@ -1,32 +1,25 @@
-const Database = require('better-sqlite3')
-const path = require('path')
+const mongoose = require('mongoose')
+const dns = require('dns')
 
-const dbPath = path.join(__dirname, 'expense_tracker.db')
-const db = new Database(dbPath)
+require('dotenv').config()
 
-// Enable WAL mode for better performance
-db.pragma('journal_mode = WAL')
-db.pragma('foreign_keys = ON')
+// Use public resolvers to avoid SRV lookup issues on some networks.
+dns.setServers(['8.8.8.8', '8.8.4.4'])
 
-// Create tables
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT NOT NULL UNIQUE COLLATE NOCASE,
-    email TEXT NOT NULL UNIQUE COLLATE NOCASE,
-    password TEXT NOT NULL
-  );
+const connectDB = async () => {
+  const uri = process.env.MONGODB_URI
 
-  CREATE TABLE IF NOT EXISTS transactions (
-    id TEXT PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    description TEXT NOT NULL,
-    amount REAL NOT NULL,
-    type TEXT NOT NULL CHECK(type IN ('income', 'expense')),
-    category TEXT NOT NULL,
-    date TEXT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  );
-`)
+  if (!uri) {
+    throw new Error('MONGODB_URI is not set.')
+  }
 
-module.exports = db
+  try {
+    await mongoose.connect(uri)
+    console.log('MongoDB connected')
+  } catch (error) {
+    console.error('MongoDB connection error:', error)
+    process.exit(1)
+  }
+}
+
+module.exports = connectDB

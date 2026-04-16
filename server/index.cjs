@@ -5,17 +5,19 @@ const path = require('path')
 
 const authRoutes = require('./routes/auth.cjs')
 const transactionRoutes = require('./routes/transactions.cjs')
+const connectDB = require('./db.cjs')
 
 const app = express()
 const PORT = process.env.PORT || 3001
 
-// Middleware
+connectDB()
+
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
       callback(null, true)
     } else {
-      callback(null, true) // Allow all origins in production (same server)
+      callback(null, true)
     }
   },
   credentials: true,
@@ -30,24 +32,20 @@ app.use(session({
   cookie: {
     httpOnly: true,
     secure: false,
-    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    maxAge: 1000 * 60 * 60 * 24 * 7,
   },
 }))
 
-// API Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/transactions', transactionRoutes)
 
-// Serve React frontend (production build)
 const distPath = path.join(__dirname, '..', 'dist')
 app.use(express.static(distPath))
 
-// Fallback: any non-API route serves index.html (for React client-side routing)
 app.get('{*path}', (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'))
 })
 
-// Start server
 app.listen(PORT, () => {
-  console.log(`✅ Expense Tracker running at http://localhost:${PORT}`)
+  console.log(`Expense Tracker running at http://localhost:${PORT}`)
 })
